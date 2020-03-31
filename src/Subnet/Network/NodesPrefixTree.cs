@@ -25,10 +25,10 @@ namespace Subnet.Network
 
         private readonly Node _root = new Node();
 
-        public bool AddOrReplace(PrefixKey key, int range, TValue value)
+        public TValue AddOrReplace(PrefixKey key, int range, TValue value)
         {
             var node = Locate(key, range, true, out var old);
-            var replaced = node.Data != null && node.Data != value;
+            var replaced = node.Data;
             node.Data = value;
             return replaced;
         }

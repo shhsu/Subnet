@@ -171,7 +171,7 @@ namespace Tests.Subnet
             var directory = new SubnetDirectory<string>();
             foreach (var source in sources)
             {
-                await _parsers[source.Schema](source.Parameters, (cidr, tag) => directory.TryAddSubnet(cidr, tag));
+                await _parsers[source.Schema](source.Parameters, (cidr, tag) => directory.TryAddSubnet(cidr, tag, out var unused));
             }
             if (directory.Lookup is IntPrefixTree<string>)
             {

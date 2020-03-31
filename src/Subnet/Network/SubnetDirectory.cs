@@ -7,34 +7,25 @@ using PrefixKey = System.Int32;
 
 namespace Subnet.Network
 {
-    public enum SubnetAddResult
-    {
-        Failed = -1,
-        Added,
-        Replaced
-    }
-
     public interface IPrefixTree<TValue> where TValue : class  // restrict to nullable for simplicity
     {
-        bool AddOrReplace(PrefixKey key, int range, TValue value);
+        TValue AddOrReplace(PrefixKey key, int range, TValue value);
         TValue Get(PrefixKey key);
     }
 
     public class SubnetDirectory<TValue> where TValue : class  // restrict to nullable for simplicity
     {
-        public IPrefixTree<TValue> Lookup { get; } = new NodesPrefixTree<TValue>();
+        public IPrefixTree<TValue> Lookup { get; } = new IntPrefixTree<TValue>();
 
-        public SubnetAddResult TryAddSubnet(string cidrString, TValue label)
+        public bool TryAddSubnet(string cidrString, TValue newValue, out TValue old)
         {
             if (!TryParseCIDR(cidrString, out var key, out var range))
             {
-                return SubnetAddResult.Failed;
+                old = null;
+                return false;
             }
-            if (!Lookup.AddOrReplace(key, range, label))
-            {
-                return SubnetAddResult.Replaced;
-            }
-            return SubnetAddResult.Added;
+            old = Lookup.AddOrReplace(key, range, newValue);
+            return true;
         }
 
         public bool TryGetSubnet(string ipv4String, out TValue value)

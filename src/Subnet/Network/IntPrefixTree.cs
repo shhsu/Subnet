@@ -41,7 +41,7 @@ namespace Subnet.Network
 
             private Node(PrefixKey key, int range, TValue value) : this(key, range, value, new Node[2]) { }
 
-            public bool Insert(PrefixKey key, int range, TValue value, int depth)
+            public TValue Insert(PrefixKey key, int range, TValue value, int depth)
             {
                 // This node is an exact "prefix" match, this might mean one of the special case applies
                 if (Range == depth)
@@ -49,17 +49,18 @@ namespace Subnet.Network
                     // prefix is already covered by node, this is an null op
                     if (Data == value)
                     {
-                        return true;
+                        return value;
                     }
 
                     if (range == Range)
                     {
                         // same range, but data is different, this means replacement
                         Data = value;
-                        return false;
+                        return value;
                     }
                 }
                 Contract.Assert(range == depth || Range == depth || key.IsSetAt(depth) != Key.IsSetAt(depth));
+
                 // split this node if needed
                 if (Range > depth)
                 {
@@ -82,7 +83,7 @@ namespace Subnet.Network
                     var newNode = new Node(key, range, value);
                     this[newChildIndex] = newNode;
                 }
-                return true;
+                return null;
             }
 
             public string Prefix { get { return Key.ToBinary().Substring(0, Range); } }
@@ -105,11 +106,10 @@ namespace Subnet.Network
         private Node _root = Node.Root();
         public Node Root { get { return _root; } }
 
-        public bool AddOrReplace(PrefixKey key, int range, TValue value)
+        public TValue AddOrReplace(PrefixKey key, int range, TValue value)
         {
             var node = GetRange(key, range, out var unused, out var depth);
-            var result = node.Insert(key, range, value, depth);
-            return result;
+            return node.Insert(key, range, value, depth);
         }
 
         public TValue Get(PrefixKey key)

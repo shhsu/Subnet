@@ -17,15 +17,19 @@ using TestFunc = System.Func<
     System.Threading.Tasks.Task
 >;
 
-using PrefixKey = System.UInt32;
+using PrefixKey = System.Int32;
 
 namespace Tests.Subnet
 {
-    static class SubnetExtensions {
-        public static void AssertClaims(this SubnetDirectory<string> directory, IPAssertions claim) {
-            foreach (var ip in claim.Addresses) {
+    static class SubnetExtensions
+    {
+        public static void AssertClaims(this SubnetDirectory<string> directory, IPAssertions claim)
+        {
+            foreach (var ip in claim.Addresses)
+            {
                 Assert.True(directory.TryGetSubnet(ip.ToString(), out var tag));
-                if (claim.Tag != tag) {
+                if (claim.Tag != tag)
+                {
                     // TODO: remove debug code
                     directory.TryGetSubnet(ip.ToString(), out var dummy);
                 }
@@ -33,7 +37,8 @@ namespace Tests.Subnet
             }
         }
 
-        public static void VerifyCIDR(this SubnetDirectory<string> directory, string cidr, string tag) {
+        public static void VerifyCIDR(this SubnetDirectory<string> directory, string cidr, string tag)
+        {
             var tokens = cidr.Split('/');
             Assert.Equal(2, tokens.Length);
             var ip = IPAddress.Parse(tokens[0]);
@@ -44,20 +49,23 @@ namespace Tests.Subnet
         }
     }
 
-    class IPAssertions {
+    class IPAssertions
+    {
         public string Tag { get { return _tag; } }
         public ICollection<IPAddress> Addresses { get { return _addresses; } }
 
         private readonly string _tag;
         private readonly ICollection<IPAddress> _addresses;
 
-        public static IPAssertions FromPrefix(string tag, IPAddress address, int prefixSize) {
+        public static IPAssertions FromPrefix(string tag, IPAddress address, int prefixSize)
+        {
             return new IPAssertions(tag,
                 address, StartOf(address, prefixSize), EndOf(address, prefixSize)
             );
         }
 
-        public static IPAssertions Of(string tag, params string[] addresses) {
+        public static IPAssertions Of(string tag, params string[] addresses)
+        {
             return new IPAssertions(tag, addresses.Select(addr => Convert(IPAddress.Parse(addr))).ToArray());
         }
 
@@ -67,7 +75,8 @@ namespace Tests.Subnet
             return Convert(address, key => key & ~netmask);
         }
 
-        private static IPAddress EndOf(IPAddress address, int prefixSize) {
+        private static IPAddress EndOf(IPAddress address, int prefixSize)
+        {
             var netmask = GetNetMask(prefixSize);
             return Convert(address, key => key | netmask);
         }
@@ -85,13 +94,15 @@ namespace Tests.Subnet
             return result;
         }
 
-        private static PrefixKey GetNetMask(int prefixSize) {
+        private static PrefixKey GetNetMask(int prefixSize)
+        {
             var digits = 32 - prefixSize;
             var mask = (1 << digits) - 1;
             return mask;
         }
 
-        private IPAssertions(string tag, params IPAddress[] addresses) {
+        private IPAssertions(string tag, params IPAddress[] addresses)
+        {
             _tag = tag;
             _addresses = addresses;
         }

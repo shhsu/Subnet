@@ -21,79 +21,77 @@ using PrefixKey = System.UInt32;
 
 namespace Tests.Subnet
 {
-
-    static class SubnetExtensions
-    {
-        public static void AssertClaims(this SubnetDirectory<string> directory, IPAssertions claim)
-        {
-            foreach (var ip in claim.Addresses)
-            {
+    static class SubnetExtensions {
+        public static void AssertClaims(this SubnetDirectory<string> directory, IPAssertions claim) {
+            foreach (var ip in claim.Addresses) {
                 Assert.True(directory.TryGetSubnet(ip.ToString(), out var tag));
-                if (claim.Tag != tag)
-                {
+                if (claim.Tag != tag) {
+                    // TODO: remove debug code
                     directory.TryGetSubnet(ip.ToString(), out var dummy);
                 }
                 Assert.Equal(claim.Tag, tag);
             }
         }
 
-        public static void VerifyCIDR(this SubnetDirectory<string> directory, string cidr, string tag)
-        {
-            var tokens = cidr.Split("/");
+        public static void VerifyCIDR(this SubnetDirectory<string> directory, string cidr, string tag) {
+            var tokens = cidr.Split('/');
             Assert.Equal(2, tokens.Length);
             var ip = IPAddress.Parse(tokens[0]);
             var length = int.Parse(tokens[1]);
+            Assert.Equal(tokens[0], ip.ToString());
             var claims = IPAssertions.FromPrefix(tag, ip, length);
             directory.AssertClaims(claims);
         }
     }
 
-    class IPAssertions
-    {
+    class IPAssertions {
         public string Tag { get { return _tag; } }
         public ICollection<IPAddress> Addresses { get { return _addresses; } }
 
-        private string _tag;
+        private readonly string _tag;
         private readonly ICollection<IPAddress> _addresses;
-        public static IPAssertions FromPrefix(string tag, IPAddress address, int prefixSize)
-        {
+
+        public static IPAssertions FromPrefix(string tag, IPAddress address, int prefixSize) {
             return new IPAssertions(tag,
                 address, StartOf(address, prefixSize), EndOf(address, prefixSize)
             );
         }
 
-        public static IPAssertions Of(string tag, params string[] addresses)
-        {
-            return new IPAssertions(tag, addresses.Select(addr => IPAddress.Parse(addr)).ToArray());
+        public static IPAssertions Of(string tag, params string[] addresses) {
+            return new IPAssertions(tag, addresses.Select(addr => Convert(IPAddress.Parse(addr))).ToArray());
         }
 
         private static IPAddress StartOf(IPAddress address, int prefixSize)
         {
-            var primitive = BitConverter.ToUInt32(address.GetAddressBytes());
             var netmask = GetNetMask(prefixSize);
-            long l = primitive & ~netmask;
-            var shifted = new IPAddress(l);
-            return shifted;
+            return Convert(address, key => key & ~netmask);
         }
 
-        private static IPAddress EndOf(IPAddress address, int prefixSize)
-        {
-            var primitive = BitConverter.ToUInt32(address.GetAddressBytes());
+        private static IPAddress EndOf(IPAddress address, int prefixSize) {
             var netmask = GetNetMask(prefixSize);
-            long l = primitive | netmask;
-            var shifted = new IPAddress(l);
-            return shifted;
+            return Convert(address, key => key | netmask);
         }
 
-        private static PrefixKey GetNetMask(int prefixSize)
+        private static IPAddress Convert(IPAddress address, Func<PrefixKey, PrefixKey> transform = null)
         {
+            var primitive = BitConverter.ToInt32(address.GetAddressBytes(), 0);
+            var ipNetwork = IPAddress.HostToNetworkOrder(primitive);
+            if (transform != null)
+            {
+                ipNetwork = transform(ipNetwork);
+            }
+            var key32 = IPAddress.NetworkToHostOrder(ipNetwork);
+            var result = new IPAddress(BitConverter.GetBytes(key32));
+            return result;
+        }
+
+        private static PrefixKey GetNetMask(int prefixSize) {
             var digits = 32 - prefixSize;
             var mask = (1 << digits) - 1;
-            return (PrefixKey)IPAddress.HostToNetworkOrder(mask);
+            return mask;
         }
 
-        private IPAssertions(string tag, params IPAddress[] addresses)
-        {
+        private IPAssertions(string tag, params IPAddress[] addresses) {
             _tag = tag;
             _addresses = addresses;
         }

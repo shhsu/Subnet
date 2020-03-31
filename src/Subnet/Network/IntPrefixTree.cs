@@ -11,7 +11,6 @@ namespace Subnet.Network
     {
         public static bool IsSetAt(this PrefixKey value, int position)
         {
-            // what about endian?
             return ((1 << 31 - position) & value) != 0;
         }
 
@@ -247,8 +246,9 @@ namespace Subnet.Network
 
         public static string ToIPAddress(this PrefixKey key)
         {
-            var ip = new IPAddress(IPAddress.HostToNetworkOrder(key));
-            return ip.ToString();
+            var key32 = IPAddress.HostToNetworkOrder(key);
+            var keyBytes = BitConverter.GetBytes(key32);
+            return new IPAddress(keyBytes).ToString();
         }
 
         public static IntPrefixTree<TValue>.Node GetNode<TValue>(this IntPrefixTree<TValue> tree, params int[] path) where TValue : class

@@ -69,14 +69,14 @@ namespace Tests.Subnet
 
         private static IPAddress StartOf(IPAddress address, int prefixSize)
         {
-            var netmask = GetNetMask(prefixSize);
-            return Convert(address, key => key & ~netmask);
+            var binMask = GetBinaryMask(prefixSize);
+            return Convert(address, key => key & ~binMask);
         }
 
         private static IPAddress EndOf(IPAddress address, int prefixSize)
         {
-            var netmask = GetNetMask(prefixSize);
-            return Convert(address, key => key | netmask);
+            var binMask = GetBinaryMask(prefixSize);
+            return Convert(address, key => key | binMask);
         }
 
         private static IPAddress Convert(IPAddress address, Func<PrefixKey, PrefixKey> transform = null)
@@ -92,7 +92,7 @@ namespace Tests.Subnet
             return result;
         }
 
-        private static PrefixKey GetNetMask(int prefixSize)
+        private static PrefixKey GetBinaryMask(int prefixSize)
         {
             var digits = 32 - prefixSize;
             var mask = (1 << digits) - 1;

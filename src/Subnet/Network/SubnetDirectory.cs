@@ -30,9 +30,6 @@ namespace Subnet.Network
 
         public bool TryGetSubnet(string ipv4String, out TValue value)
         {
-            // if (ipv4String == "20.36.64.0") {
-
-            // }
             if (!TryParseIP(ipv4String, out var key))
             {
                 value = null;

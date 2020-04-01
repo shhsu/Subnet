@@ -20,6 +20,11 @@ namespace Subnet.Network
         }
     }
 
+    // This data structure is intended to be an optimization over NodesPrefixTree as it reduces number of nodes by
+    // pooling keys between nodes that are on the same path. Using our existing test the performance improvement
+    // was neglectable (10%) over highly occupied ip address prefix tree
+    //
+    // (NOTE: To performance test this class, make sure code Contracts are removed)
     public class IntPrefixTree<TValue> : IPrefixTree<TValue> where TValue : class // restrict to nullable for simplicity
     {
         public class Node
@@ -261,5 +266,4 @@ namespace Subnet.Network
             return cursor;
         }
     }
-
 }

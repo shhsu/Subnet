@@ -18,6 +18,8 @@ using TestFunc = System.Func<
 >;
 
 using PrefixKey = System.Int32;
+using Xunit.Abstractions;
+using System.Diagnostics;
 
 namespace Tests.Subnet
 {
@@ -28,11 +30,7 @@ namespace Tests.Subnet
             foreach (var ip in claim.Addresses)
             {
                 Assert.True(directory.TryGetSubnet(ip.ToString(), out var tag));
-                if (claim.Tag != tag)
-                {
-                    // TODO: remove debug code
-                    directory.TryGetSubnet(ip.ToString(), out var dummy);
-                }
+                SubnetDirectoryBuilderTest.RowCounts++;
                 Assert.Equal(claim.Tag, tag);
             }
         }
@@ -116,14 +114,17 @@ namespace Tests.Subnet
 
     public class SubnetDirectoryBuilderTest
     {
+        public static int RowCounts = 0;
         private const string SchemaAwsIPRangesFromFile = "aws-static-json";
         private const string SchemaAzureIPRangesFromFile = "azure-static-json";
         private const string SchemaIPPrefixesListFromFile = "ip-prefix-list-static";
 
         private readonly IDictionary<string, TestFunc> _parsers = new Dictionary<string, TestFunc>();
+        private readonly ITestOutputHelper _output;
 
-        public SubnetDirectoryBuilderTest()
+        public SubnetDirectoryBuilderTest(ITestOutputHelper output)
         {
+            _output = output;
             _parsers.Add(SchemaAwsIPRangesFromFile, FromAWSIPPrefixFile);
             _parsers.Add(SchemaAzureIPRangesFromFile, FromAzureIPPrefixFile);
             _parsers.Add(SchemaIPPrefixesListFromFile, FromIPPrefixListFile);
@@ -187,11 +188,15 @@ namespace Tests.Subnet
                 var lookup = directory.Lookup as IntPrefixTree<string>;
                 AssertTreeStructureCorrectness(lookup.Root);
             }
+            var sw = new Stopwatch();
+            sw.Start();
             foreach (var source in sources)
             {
                 await _parsers[source.Schema](source.Parameters, (cidr, tag) => directory.VerifyCIDR(cidr, tag));
             }
             directory.AssertClaims(otherRules);
+            sw.Stop();
+            _output.WriteLine($"Checked {RowCounts} rows, time elapsed: {sw.ElapsedMilliseconds}");
         }
 
         private void AssertTreeStructureCorrectness(IntPrefixTree<string>.Node node)

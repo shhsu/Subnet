@@ -1,6 +1,5 @@
 
 using System;
-using System.Diagnostics.Contracts;
 using System.Net;
 using System.Text;
 using PrefixKey = System.Int32;
@@ -33,14 +32,14 @@ namespace Subnet.Network
             public TValue Data { get; private set; }
             public PrefixKey Key { get; private set; }
             public int Range { get; private set; }
-            private Node[] Children;
+            private Node[] _children;
 
             private Node(PrefixKey key, int range, TValue value, Node[] children)
             {
                 Key = key;
                 Range = range;
                 Data = value;
-                Children = children;
+                _children = children;
             }
 
             private Node(PrefixKey key, int range, TValue value) : this(key, range, value, new Node[2]) { }
@@ -63,15 +62,15 @@ namespace Subnet.Network
                         return value;
                     }
                 }
-                Contract.Assert(range == depth || Range == depth || key.IsSetAt(depth) != Key.IsSetAt(depth));
+                // Contract.Assert(range == depth || Range == depth || key.IsSetAt(depth) != Key.IsSetAt(depth));
 
                 // split this node if needed
                 if (Range > depth)
                 {
-                    var clone = new Node(Key, Range, Data, Children);
+                    var clone = new Node(Key, Range, Data, _children);
                     Data = null;
                     Range = depth;
-                    Children = new Node[2];
+                    _children = new Node[2];
                     this[Key.ChildIndex(depth)] = clone;
                 }
                 if (Range == range)
@@ -83,7 +82,7 @@ namespace Subnet.Network
                 else
                 {
                     var newChildIndex = key.ChildIndex(depth);
-                    Contract.Assert(this[newChildIndex] == null);
+                    // Contract.Assert(this[newChildIndex] == null);
                     var newNode = new Node(key, range, value);
                     this[newChildIndex] = newNode;
                 }
@@ -97,12 +96,12 @@ namespace Subnet.Network
             {
                 get
                 {
-                    return Children[i];
+                    return _children[i];
                 }
 
                 set
                 {
-                    Children[i] = value;
+                    _children[i] = value;
                 }
             }
         }
@@ -148,7 +147,7 @@ namespace Subnet.Network
                     if (next != null)
                     {
                         cursor = next;
-                        Contract.Assert(cursor.Range > depth);
+                        // Contract.Assert(cursor.Range > depth);
                         xor = key ^ cursor.Key;
                         depth++;
                     }
@@ -158,8 +157,8 @@ namespace Subnet.Network
                     }
                 }
             }
-            Contract.Assert(this.Depth0IffRoot(cursor, depth));
-            Contract.Assert(this.OnlyEndDigitIsDifferentIfNotRoot(cursor, key, range, depth));
+            // Contract.Assert(this.Depth0IffRoot(cursor, depth));
+            // Contract.Assert(this.OnlyEndDigitIsDifferentIfNotRoot(cursor, key, range, depth));
             if (depth == cursor.Range)
             {
                 lastMatch = cursor.Data ?? lastMatch;
